@@ -1,5 +1,6 @@
 const COLOR_ATTENTION = '#fc036f';
-const COLOR_SUCCESS = '#4ee846';
+const COLOR_SUCCESS = '#77d54c';
+const ACCOUNTS_PER_RUN = 40;
 
 function simulateMouseClick(element) {
   const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
@@ -49,14 +50,14 @@ async function goToAccount($, account) {
 
   // Click on the search button to open the search results menu.
   simulateMouseClick($(searchButton));
-  console.log(`%cSearch button '${searchButton}' clicked!`, `color: ${COLOR_SUCCESS}`);
+  console.log(`Search button '${searchButton}' clicked!`);
 
   // Simulate typing the search query
   const searchInput = ".XTCLo.d_djL.DljaH"
-  simulateMouseClick($(searchInput));
+  // simulateMouseClick($(searchInput));
   setNativeValue($(searchInput), account);
   $(searchInput).dispatchEvent(new Event('input', { bubbles: true }));
-  console.log(`%cSearch query '${account}' entered!`, `color: ${COLOR_SUCCESS}`);
+  console.log(`Search query '${account}' entered!`);
 
   const firstSearchRow = ".fuqBx div:nth-child(1) a"
   // Wait for the search results...
@@ -75,7 +76,7 @@ async function goToAccount($, account) {
 
   link.click()
 
-  console.log(`%cLink to account '${link}' clicked`, `color: ${COLOR_SUCCESS}`);
+  console.log(`Link to account '${link}' clicked`);
   return true;
 }
 
@@ -95,11 +96,13 @@ async function waitForElementToUpdate(el) {
 
 }
 
-async function click($, i, btns) {
+async function click($, account, i, btns) {
+  await sleep(randomBetween(500, 1000));
+
   if (i + 1 === btns.length) {
     // wait longer before closing the dialog
     console.log("...wait more...");
-    await sleep(randomBetween(2000, 3000));
+    await sleep(randomBetween(1500, 2000));
   }
 
   const btn = btns[i].selector;
@@ -121,49 +124,57 @@ async function click($, i, btns) {
   if (btns[i].wait) {
     console.log("Waiting for DOM update...");
     await btns[i].wait()
-    console.log("DOM Updated!");
+    console.log("DOM Updated");
   }
 
   if (i + 1 === btns.length) {
-    console.log("%cAccount reported! Glory to Ukraine!", `color: ${COLOR_ATTENTION}`);
+    console.log(`%cAccount '${account}' reported! Glory to Ukraine!`, `color: ${COLOR_SUCCESS}`);
     return;
   }
 
   if (i + 1 < btns.length) {
-    await click($, i + 1, btns);
+    await click($, account, i + 1, btns);
   }
 }
 
-async function reportAccount($) {
+async function reportAccount($, account) {
   console.log("start reporting");
-  await click($, 0, [
+  await click($, account, 0, [
     { selector: ".VMs3J .wpO6b" },
     { selector: ".mt3GC button:nth-child(3)" },
     { selector: ".J09pf button:nth-child(2)", wait: async () => waitForElementToUpdate($(".J09pf")) },
     { selector: ".J09pf button:nth-child(1)", wait: async () => waitForElementToUpdate($(".J09pf")) },
-    { selector: ".J09pf button:nth-child(7)" },
-    { selector: "#igCoreRadioButtontag-3" },
-    { selector: "._1XyCr .sqdOP.L3NKy.y3zKF" },
+    { selector: ".J09pf button:nth-child(11)" },
+    // { selector: "#igCoreRadioButtontag-3" },
+    // { selector: "._1XyCr .sqdOP.L3NKy.y3zKF" },
     { selector: "._1XyCr .sqdOP.L3NKy.y3zKF" }
   ]);
 }
 
 // Kick off the script!
 (async ($) => {
-  console.log('%cIMPORTANT! Move focus from Dev Tools back to the page!', `color: ${COLOR_ATTENTION}`)
-  // Wait for the user to switch the focus back to the page.
-  await sleep(4000);
+  for (let attempt = 0; attempt < 6; attempt++) {
+    console.log('%cIMPORTANT! Please move focus from Dev Tools back to the page!', `color: ${COLOR_ATTENTION}`)
+    // Wait for the user to switch the focus back to the page.
+    await sleep(1000);
+  }
 
   shuffle(accounts);
-  console.log(accounts);
+  console.log(`Accounts: ${accounts}`);
 
-  const failedAccounts = []
+  const failedAccounts = [];
+  var i = 0;
   for (let account of accounts) {
     try {
       const reported = localStorage.getItem(account);
       if (reported) {
         console.log("skip: account '" + account + "' already reported");
         continue
+      }
+
+      if (i >= ACCOUNTS_PER_RUN) {
+        console.log("%cMax number of accounts per day reached. Please rerun this script tomorrow. We'll stop russian propoganda!", `color: ${COLOR_ATTENTION}`);
+        break;
       }
 
       await sleep(randomBetween(1000, 2000));
@@ -173,7 +184,7 @@ async function reportAccount($) {
         continue;
       }
 
-      await sleep(randomBetween(1500, 3000));
+      await sleep(randomBetween(500, 1000));
 
       // Wait for the page to load
       while (!document || document.readyState !== "complete") {
@@ -183,9 +194,10 @@ async function reportAccount($) {
 
       await sleep(randomBetween(1500, 3000));
       // Call a function to report the account.
-      await reportAccount($);
+      await reportAccount($, account);
 
       localStorage.setItem(account, true);
+      i++;
     }
     catch (err) {
       console.error("failed to report '" + account + "' Error: " + err)
@@ -199,8 +211,18 @@ async function reportAccount($) {
 })($)
 
 const accounts = [
+  "craterimpact",
+  "viktoriapresent",
+  "ali_mma_don",
+  "otryady_putina",
+  "alina.life.vlog",
+  "marivedler",
+  "real_politics_rus",
+  "news_blog_rus",
+  "tabukh_urist",
+  "maksim.p04",
   "kremle__bot",
-  "pavelkorolev",
+  "_pavelkorolev_",
   "kosmos_mikhailovka",
   "d.amonov93",
   "snn5.3",
@@ -219,4 +241,91 @@ const accounts = [
   "dahagoroshek",
   "biblergram",
   "olya_torubar",
+  "yush.o",
+  "inc.lugansk",
+  "talyjustmyphoto",
+  "sedovan_leotard_embroidery",
+  "evgeniye_bakulin",
+  "russiazaputina",
+  "kat_maret",
+  "volrota",
+  "presidentsha69",
+  "od_dr",
+  "mrespublika",
+  "nikolaizubrilin3628",
+  "aleksandr_sanakoev_26rus",
+  "vladimir_zaigrin666",
+  "thezamyatins",
+  "myagkova_olga_y",
+  "tsarkrest",
+  "bondarenko.nikolay26",
+  "mara.mounn",
+  "marusia_biryukova",
+  "astrolog_orlova",
+  "trezvayarossiya",
+  "stepan_akopyan_s",
+  "imamat.dagestana",
+  "radugada",
+  "russia_fsb_sf",
+  "marina.slovo",
+  "yambinna",
+  "voroshilov_dm",
+  "djmegofficial",
+  "konstantin_sarkisyan",
+  "veronikaivaschenko",
+  "cityspb",
+  "korolev_official",
+  "tory.teacher",
+  "shuvalov_music",
+  "egorovznaet",
+  "butina_maria",
+  "reporter_sladkov",
+  "makslorann",
+  "vmgere",
+  "tv_dagestana",
+  "evgeny.poddubny",
+  "konstantin.daragan",
+  "__miss__alena",
+  "khver.27",
+  "arhyz24",
+  "Olgakurbatova7",
+  "sever_elena",
+  "svetlana___manina",
+  "goblin_oper",
+  "kak_zdorovo",
+  "vn9090",
+  "manucharov",
+  "advokat_goncharov",
+  "za_putina",
+  "Maisto777",
+  "ivan.utenkov.live",
+  "laima_vaikule_official",
+  "sledcom_rf",
+  "chp_vladikavkaz",
+  "mamashvetka2",
+  "makeevan",
+  "russian_kremlin",
+  "vladimirvladimirov5807",
+  "andreykovalev_russia",
+  "b.korchevnikov",
+  "djkatyaguseva",
+  "katiatxi",
+  "shalyapin_official",
+  "zapashny.ru",
+  "Olgaviya",
+  "4ch_russia",
+  "nosov_official",
+  "kadyrov_ahmat",
+  "adubrovskaya",
+  "artem.dzyuba",
+  "alexemelyanenko",
+  "kremlin_russian",
+  "tanya.butskaya",
+  "dustumjr",
+  "nastya_slava",
+  "tina_kandelaki",
+  "tatarkafm",
+  "za_kra_cherhigov_95",
+  "nikolaibaskov",
+  "Missalena.92",
 ]
