@@ -1,6 +1,6 @@
 const COLOR_ATTENTION = '#fc036f';
 const COLOR_SUCCESS = '#77d54c';
-const ACCOUNTS_PER_RUN = 40;
+const ACCOUNTS_PER_RUN = 15;
 
 function simulateMouseClick(element) {
   const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
@@ -93,11 +93,23 @@ async function waitForElementToUpdate(el) {
       observer.disconnect();
     }, 10000);
   })
+}
 
+async function hasChildNumber(selector, number) {
+  const n = document.querySelectorAll(selector).length;;
+  return n === number;
 }
 
 async function click($, account, i, btns) {
   await sleep(randomBetween(500, 1000));
+
+  if (btns[i].skip) {
+    if (btns[i].skip() === true) {
+      console.log("SKIP step");
+      await click($, account, i + 1, btns);
+      return
+    }
+  }
 
   if (i + 1 === btns.length) {
     // wait longer before closing the dialog
@@ -142,7 +154,7 @@ async function reportAccount($, account) {
   await click($, account, 0, [
     { selector: ".VMs3J .wpO6b" },
     { selector: ".mt3GC button:nth-child(3)" },
-    { selector: ".J09pf button:nth-child(2)", wait: async () => waitForElementToUpdate($(".J09pf")) },
+    { selector: ".J09pf button:nth-child(2)", wait: async () => waitForElementToUpdate($(".J09pf")), skip: async () => !hasChildNumber(".J09pf button", 2) },
     { selector: ".J09pf button:nth-child(1)", wait: async () => waitForElementToUpdate($(".J09pf")) },
     { selector: ".J09pf button:nth-child(11)" },
     // { selector: "#igCoreRadioButtontag-3" },
