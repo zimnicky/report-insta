@@ -1,6 +1,6 @@
 const COLOR_ATTENTION = '#fc036f';
 const COLOR_SUCCESS = '#77d54c';
-const ACCOUNTS_PER_RUN = 15;
+const ACCOUNTS_PER_RUN = 40;
 
 function simulateMouseClick(element) {
   const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
