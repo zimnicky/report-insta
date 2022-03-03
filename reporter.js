@@ -1,18 +1,18 @@
-const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
 const COLOR_ATTENTION = '#fc036f';
 const COLOR_SUCCESS = '#4ee846';
 
 function simulateMouseClick(element) {
+  const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
   mouseClickEvents.forEach(mouseEventType =>
-      element.dispatchEvent(
-        new MouseEvent(mouseEventType, {
-          view: window,
-          bubbles: true,
-          cancelable: true,
-          buttons: 1
-        })
-      )
-    );
+    element.dispatchEvent(
+      new MouseEvent(mouseEventType, {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        buttons: 1
+      })
+    )
+  );
 }
 
 function setNativeValue(element, value) {
@@ -28,11 +28,11 @@ function setNativeValue(element, value) {
 }
 
 function shuffle(array) {
-    array.sort(() => Math.random() - 0.5);
+  array.sort(() => Math.random() - 0.5);
 }
 
 function randomBetween(min, max) {
-    return min + Math.round(Math.random() * (max - min));
+  return min + Math.round(Math.random() * (max - min));
 }
 
 function sleep(ms) {
@@ -79,47 +79,73 @@ async function goToAccount($, account) {
   return true;
 }
 
+async function waitForElementToUpdate(el) {
+  return new Promise((resolve, reject) => {
+    const observer = new MutationObserver(() => {
+      resolve();
+      observer.disconnect();
+    });
+    observer.observe(el, { childList: true });
+    // For safety, let's set a 10-second timeout if no update arrives.
+    setTimeout(() => {
+      reject("Didn't receive any DOM updates for ", el);
+      observer.disconnect();
+    }, 10000);
+  })
+
+}
+
 async function click($, i, btns) {
-    var sleepMs = randomBetween(1500, 2500);
-    if (i + 1 == btns.length) {
-        // wait longer before closing the dialog
-        console.log("...wait more...");
-        await sleep(randomBetween(2000, 3000));
+  if (i + 1 === btns.length) {
+    // wait longer before closing the dialog
+    console.log("...wait more...");
+    await sleep(randomBetween(2000, 3000));
+  }
+
+  const btn = btns[i].selector;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    console.log(`Wait for #${i} '${btn}' to appear...`);
+    await sleep(randomBetween(500, 1000));
+    if ($(btn)) {
+      break;
     }
+  }
 
-    var btn = btns[i];
+  if ($(btn) === null) {
+    console.log("button #" + i + ": '" + btn + "' not found");
+    return;
+  }
 
-    if ($(btn) == null) {
-        console.log("button #"+i+": '"+btn+"' not found");
-        return
-    }
+  $(btn).click();
+  console.log("button #" + i + ": '" + btn + "' clicked");
+  if (btns[i].wait) {
+    console.log("Waiting for DOM update...");
+    await btns[i].wait()
+    console.log("DOM Updated!");
+  }
 
-    $(btn).click();
-    console.log("button #" + i + ": '" + btn + "' clicked");
+  if (i + 1 === btns.length) {
+    console.log("%cAccount reported! Glory to Ukraine!", `color: ${COLOR_ATTENTION}`);
+    return;
+  }
 
-    if (i+1 == btns.length) {
-        console.log("account reported. Glory to Ukraine!");
-        return
-    }
-
-    if (i + 1 < btns.length) {
-        await sleep(sleepMs);
-        await click($, i + 1, btns);
-    }
+  if (i + 1 < btns.length) {
+    await click($, i + 1, btns);
+  }
 }
 
 async function reportAccount($) {
-    console.log("start reporting");
-    await click($, 0, [
-        ".VMs3J .wpO6b",
-        ".mt3GC button:nth-child(3)",
-        ".J09pf button:nth-child(2)",
-        ".J09pf button:nth-child(1)",
-        ".J09pf button:nth-child(7)",
-        "#igCoreRadioButtontag-3",
-        "._1XyCr .sqdOP.L3NKy.y3zKF",
-        "._1XyCr .sqdOP.L3NKy.y3zKF"
-    ]);
+  console.log("start reporting");
+  await click($, 0, [
+    { selector: ".VMs3J .wpO6b" },
+    { selector: ".mt3GC button:nth-child(3)" },
+    { selector: ".J09pf button:nth-child(2)", wait: async () => waitForElementToUpdate($(".J09pf")) },
+    { selector: ".J09pf button:nth-child(1)", wait: async () => waitForElementToUpdate($(".J09pf")) },
+    { selector: ".J09pf button:nth-child(7)" },
+    { selector: "#igCoreRadioButtontag-3" },
+    { selector: "._1XyCr .sqdOP.L3NKy.y3zKF" },
+    { selector: "._1XyCr .sqdOP.L3NKy.y3zKF" }
+  ]);
 }
 
 // Kick off the script!
@@ -131,19 +157,19 @@ async function reportAccount($) {
   shuffle(accounts);
   console.log(accounts);
 
-  var failedAccountes = []
+  const failedAccounts = []
   for (let account of accounts) {
     try {
-      var reported = localStorage.getItem(account);
+      const reported = localStorage.getItem(account);
       if (reported) {
         console.log("skip: account '" + account + "' already reported");
         continue
       }
 
       await sleep(randomBetween(1000, 2000));
-      var success = await goToAccount($, account);
+      const success = await goToAccount($, account);
       if (!success) {
-        failedAccountes.push(account);
+        failedAccounts.push(account);
         continue;
       }
 
@@ -162,32 +188,32 @@ async function reportAccount($) {
       localStorage.setItem(account, true);
     }
     catch (err) {
-      console.error("failed to report '" + account + "' Error: "+err)
+      console.error("failed to report '" + account + "' Error: " + err)
     }
   }
   console.log("FINISHED");
-  
-  if (failedAccountes.length > 0) {
-      console.log("Failed accounts: " + failedAccountes)
+
+  if (failedAccounts.length > 0) {
+    console.log("Failed accounts: " + failedAccounts)
   }
 })($)
 
 const accounts = [
-    // "elenakrait",
-    // "vrsoloviev",
-    // "marton1881",
-    // "kdvinsky",
-    // "_m_simonyan_",
-    // "juliakovalchuk",
-    // "tv3russia",
-    // "tnt_online",
-    "starovoytov82",
-    // "oleggazmanov",
-    // "lider95",
-    "russia_fsb_sf",
-    "e.uglach",
-    "katiatxi",
-    "Missalena.92",
-    "alina.life.vlog",
-    "zhest_belgorod",
+  // "elenakrait",
+  // "vrsoloviev",
+  // "marton1881",
+  // "kdvinsky",
+  // "_m_simonyan_",
+  // "juliakovalchuk",
+  // "tv3russia",
+  // "tnt_online",
+  "starovoytov82",
+  // "oleggazmanov",
+  // "lider95",
+  "russia_fsb_sf",
+  "e.uglach",
+  "katiatxi",
+  "Missalena.92",
+  "alina.life.vlog",
+  "zhest_belgorod",
 ]
