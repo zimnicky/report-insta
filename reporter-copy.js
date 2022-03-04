@@ -244,5 +244,5 @@ async function reportAccount($, account) {
   }
 })($)
 
-// "const accounts = [];" will be replaced with real accounts by the magical proxy server.
-const accounts = [];
+// DO NOT REMOVE. Use this global variable to test stuff. The proxy server will add the real accounts when returning the response.
+let accounts = [];
