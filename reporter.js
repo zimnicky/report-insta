@@ -151,6 +151,24 @@ async function click($, account, i, btns) {
   }
 }
 
+function countReportedAccountsLastDay(accounts) {
+  var reportedLastDay = 0;
+  for (let account of accounts) {
+    const reported = localStorage.getItem(account);
+      // also verify reported === "true" to support backword compatibility: at first localStorage stored just boolean "true" value
+      if (!reported || reported === "true") {
+      continue
+    }    
+
+    const reportedAt = Number(reported);
+    const interval = Date.now() - reportedAt;
+    if (interval < DURATION_DAY) {
+      reportedLastDay++;
+    }
+  }
+  return reportedLastDay;
+}
+
 async function reportAccount($, account) {
   console.log("start reporting");
   await click($, account, 0, [
@@ -175,27 +193,22 @@ async function reportAccount($, account) {
   console.log(`Accounts: ${accounts}`);
 
   const failedAccounts = [];
-  var reportedLastDay = 0;
+  var reportedLastDay = countReportedAccountsLastDay(accounts);
+  if (reportedLastDay > 0) {
+    console.log(`%cYou've reported ${reportedLastDay} accounts last day.`, `color: ${COLOR_SUCCESS}`);
+  }
+
   for (let account of accounts) {
+    if (reportedLastDay >= ACCOUNTS_PER_DAY) {
+      console.log(`%cMax number of accounts(${ACCOUNTS_PER_DAY}) per day reached. Please rerun this script tomorrow. We'll stop russian propoganda!`, `color: ${COLOR_ATTENTION}`);
+      break;
+    }
+
     try {
       const reported = localStorage.getItem(account);
       if (reported) {
-        // verify the boolean to support backword compatibility: at first localStorage stored just boolean "true" value
-        if (reported !== "true") {
-          const reportedAt = Number(reported);
-          const interval = Date.now() - reportedAt;
-          if (interval < DURATION_DAY) {
-            reportedLastDay++;
-          }
-        }
-
         console.log(`%cskip: account '${account}' already reported`, `color: ${COLOR_YELLOW}`);
         continue
-      }
-
-      if (reportedLastDay >= ACCOUNTS_PER_DAY) {
-        console.log("%cMax number of accounts per day reached. Please rerun this script tomorrow. We'll stop russian propoganda!", `color: ${COLOR_ATTENTION}`);
-        break;
       }
 
       await sleep(randomBetween(1000, 2000));
