@@ -1,6 +1,8 @@
 const COLOR_ATTENTION = '#fc036f';
 const COLOR_SUCCESS = '#77d54c';
-const ACCOUNTS_PER_RUN = 40;
+const COLOR_YELLOW = '#ffd24c';
+const ACCOUNTS_PER_DAY = 40;
+const DURATION_DAY = 24 * 60 * 60 * 1000;
 
 function simulateMouseClick(element) {
   const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
@@ -37,7 +39,7 @@ function randomBetween(min, max) {
 }
 
 function sleep(ms) {
-  console.log('Sleeping for', ms, 'ms...')
+  console.log('waiting for', ms, 'ms...')
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -165,26 +167,33 @@ async function reportAccount($, account) {
 
 // Kick off the script!
 (async ($) => {
-  for (let attempt = 0; attempt < 6; attempt++) {
-    console.log('%cIMPORTANT! Please move focus from Dev Tools back to the page!', `color: ${COLOR_ATTENTION}`)
-    // Wait for the user to switch the focus back to the page.
-    await sleep(1000);
-  }
+  console.log('%cIMPORTANT! Please move focus from Dev Tools back to the page!', `color: ${COLOR_ATTENTION}`)
+  // Wait for the user to switch the focus back to the page.
+  await sleep(5000);
 
   shuffle(accounts);
   console.log(`Accounts: ${accounts}`);
 
   const failedAccounts = [];
-  var i = 0;
+  var reportedLastDay = 0;
   for (let account of accounts) {
     try {
       const reported = localStorage.getItem(account);
       if (reported) {
-        console.log("skip: account '" + account + "' already reported");
+        // verify the boolean to support backword compatibility: at first localStorage stored just boolean "true" value
+        if (reported !== "true") {
+          const reportedAt = Number(reported);
+          const interval = Date.now() - reportedAt;
+          if (interval < DURATION_DAY) {
+            reportedLastDay++;
+          }
+        }
+
+        console.log(`%cskip: account '${account}' already reported`, `color: ${COLOR_YELLOW}`);
         continue
       }
 
-      if (i >= ACCOUNTS_PER_RUN) {
+      if (reportedLastDay >= ACCOUNTS_PER_DAY) {
         console.log("%cMax number of accounts per day reached. Please rerun this script tomorrow. We'll stop russian propoganda!", `color: ${COLOR_ATTENTION}`);
         break;
       }
@@ -208,8 +217,8 @@ async function reportAccount($, account) {
       // Call a function to report the account.
       await reportAccount($, account);
 
-      localStorage.setItem(account, true);
-      i++;
+      localStorage.setItem(account, Date.now());
+      reportedLastDay++;
     }
     catch (err) {
       console.error("failed to report '" + account + "' Error: " + err)
