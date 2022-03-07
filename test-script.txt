@@ -158,7 +158,7 @@ function countReportedAccountsLastDay(accounts) {
       // also verify reported === "true" to support backword compatibility: at first localStorage stored just boolean "true" value
       if (!reported || reported === "true") {
       continue
-    }
+    }    
 
     const reportedAt = Number(reported);
     const interval = Date.now() - reportedAt;
@@ -184,7 +184,11 @@ async function reportAccount($, account) {
 }
 
 // Kick off the script!
-async function start() {
+(async ($) => {
+  console.log('%cIMPORTANT! Please move focus from Dev Tools back to the page!', `color: ${COLOR_ATTENTION}`)
+  // Wait for the user to switch the focus back to the page.
+  await sleep(5000);
+
   shuffle(accounts);
   console.log(`Accounts: ${accounts}`);
 
@@ -238,12 +242,7 @@ async function start() {
   if (failedAccounts.length > 0) {
     console.log("Failed accounts: " + failedAccounts)
   }
-}
-
-async function start_test()
-{
-  console.log("Started");
-}
+})($)
 
 // DO NOT REMOVE. Use this global variable to test stuff. The proxy server will add the real accounts when returning the response.
 let accounts = [];
