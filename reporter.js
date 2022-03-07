@@ -4,6 +4,8 @@ const COLOR_YELLOW = '#ffd24c';
 const ACCOUNTS_PER_DAY = 40;
 const DURATION_DAY = 24 * 60 * 60 * 1000;
 
+$ = document.querySelector.bind(document)
+
 function simulateMouseClick(element) {
   const mouseClickEvents = ['mousedown', 'click', 'mouseup'];
   mouseClickEvents.forEach(mouseEventType =>
